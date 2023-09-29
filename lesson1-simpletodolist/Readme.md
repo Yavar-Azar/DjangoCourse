@@ -52,16 +52,9 @@
    # todoapp/models.py
    from django.db import models
    
-   class Category(models.Model):
-       name = models.CharField(max_length=100)
-   
-       def __str__(self):
-           return self.name
-   
    class Task(models.Model):
        title = models.CharField(max_length=200)
        description = models.TextField()
-       category = models.ForeignKey(Category, on_delete=models.CASCADE)
    
        def __str__(self):
            return self.title
@@ -80,7 +73,7 @@
 
    ```python
    # todoapp/views.py
-   from django.shortcuts import render
+   from django.shortcuts import render, redirect
    from .models import Task
    
    def task_list(request):
@@ -89,8 +82,13 @@
    
    def add_task(request):
        if request.method == 'POST':
-           # Handle form submission and task creation here
+           title = request.POST['title']
+           description = request.POST['description']
+           task = Task(title=title, description=description)
+           task.save()
+           return redirect('task_list')
        return render(request, 'todoapp/add_task.html')
+   
    ```
 
 10. Create HTML templates for your views. Place them in a folder named `templates/todoapp`:
@@ -98,48 +96,73 @@
    `task_list.html`:
 
    ```html
+   <!-- templates/todoapp/task_list.html -->
    <!DOCTYPE html>
    <html>
    <head>
-       <title>To-Do List</title>
+       <title>Task List</title>
+       <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
    </head>
    <body>
-       <h1>Task List</h1>
-       <ul>
-           {% for task in tasks %}
-               <li>{{ task.title }}</li>
-           {% endfor %}
-       </ul>
+       <div class="container">
+           <h1 class="mt-4">Task List</h1>
+           <table class="table table-striped mt-4">
+               <thead>
+                   <tr>
+                       <th scope="col">Title</th>
+                       <th scope="col">Description</th>
+                   </tr>
+               </thead>
+               <tbody>
+                   {% for task in tasks %}
+                       <tr>
+                           <td>{{ task.title }}</td>
+                           <td>{{ task.description }}</td>
+                       </tr>
+                   {% empty %}
+                       <tr>
+                           <td colspan="2">No tasks available.</td>
+                       </tr>
+                   {% endfor %}
+               </tbody>
+           </table>
+           <a href="{% url 'add_task' %}" class="btn btn-primary">Add Task</a>
+       </div>
    </body>
    </html>
+   
    ```
 
    `add_task.html`:
 
    ```html
+   <!-- templates/todoapp/add_task.html -->
    <!DOCTYPE html>
    <html>
    <head>
        <title>Add Task</title>
+       <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
    </head>
    <body>
-       <h1>Add Task</h1>
-       <form method="post">
-           {% csrf_token %}
-           <label for="title">Title:</label>
-           <input type="text" id="title" name="title" required><br>
-           <label for="description">Description:</label>
-           <textarea id="description" name="description" required></textarea><br>
-           <label for="category">Category:</label>
-           <select id="category" name="category">
-               {% for category in categories %}
-                   <option value="{{ category.id }}">{{ category.name }}</option>
-               {% endfor %}
-           </select><br>
-           <input type="submit" value="Add Task">
-       </form>
+       <div class="container">
+           <h1 class="mt-4">Add Task</h1>
+           <form method="post" class="mt-4">
+               {% csrf_token %}
+               <div class="form-group">
+                   <label for="title">Title:</label>
+                   <input type="text" id="title" name="title" class="form-control" required>
+               </div>
+               <div class="form-group">
+                   <label for="description">Description:</label>
+                   <textarea id="description" name="description" class="form-control" required></textarea>
+               </div>
+               <button type="submit" class="btn btn-success">Add Task</button>
+           </form>
+           <a href="{% url 'task_list' %}" class="btn btn-secondary mt-3">Back to Task List</a>
+       </div>
    </body>
    </html>
+   
    
    ```
 
@@ -177,11 +200,3 @@
 
 14. Access your To-Do List application in your web browser at `http://localhost:8000`.
 
-## Next Steps
-
-You've created a basic To-Do List application. To expand on this project, consider adding features like editing tasks, deleting tasks, user authentication, and improving the user interface. Refer to the Django documentation for more information: [Django Documentation](https://docs.djangoproject.com/en/stable/).
-
-Happy coding!
-```
-
-You can save this Markdown content to a `README.md` file in your project directory for clear and concise documentation.
